@@ -1,0 +1,97 @@
+<?php
+
+function send_request($url, $data = null, $bearer = null): array {
+    $response = [];
+
+    $ch = curl_init();
+    
+    curl_setopt(handle: $ch, option: CURLOPT_URL, value: $url);
+    curl_setopt(handle: $ch, option: CURLOPT_POST, value: true);
+
+    if($data) {
+        curl_setopt(handle: $ch, option: CURLOPT_POSTFIELDS, value: http_build_query(data: $data));
+    }
+
+    if($bearer) {
+        curl_setopt(handle: $ch, option: CURLOPT_HTTPHEADER, value: array(
+            'Authorization: Bearer ' . $bearer,
+            'Accept: application/json'
+        ));
+    }
+    
+    curl_setopt(handle: $ch, option: CURLOPT_RETURNTRANSFER, value: true);
+    $curl_response = curl_exec(handle: $ch);
+    curl_close(handle: $ch);
+    $response = json_decode(json: $curl_response, associative: true);
+    
+    return $response;
+}
+
+function exchange_code($code): bool {
+    $is_exchanged = false;
+
+    $data = array(
+        'code' => $code,
+        'client_id' => $_ENV['GOOGLE_CLIENT_ID'],
+        'client_secret' => $_ENV['GOOGLE_CLIENT_SECRET'],
+        'redirect_uri' => $_ENV['GOOGLE_REDIRECT_URI'],
+        'grant_type' => 'authorization_code',
+    );
+
+    $exchange = send_request(url: "https://oauth2.googleapis.com/token", data: $data);
+
+    if(isset($exchange['access_token']) && isset($exchange['refresh_token'])) {
+        setcookie(name: 'codelab_google_access_token', value: $exchange['access_token'], httponly: true);
+        setcookie(name: 'codelab_google_refresh_token', value: $exchange['refresh_token'], httponly: true);
+        $is_exchanged = true;
+    }
+    return $is_exchanged;
+}
+function get_profile(): array {
+
+    $profile = ["token_status" => null, "data" => null];
+
+    if(isset($_COOKIE['codelab_google_access_token'])) {
+
+        $fetch_profile = send_request(url: "https://openidconnect.googleapis.com/v1/userinfo", bearer: $_COOKIE['codelab_google_access_token']);
+
+        if(isset($fetch_profile['error'])) {
+            $profile["token_status"] = "invalid";
+        }
+        else {
+            $profile["token_status"] = "valid";
+            $profile["data"] = [
+                "sub" => isset($fetch_profile["sub"]) ? $fetch_profile["sub"] : null,
+                "name" => isset($fetch_profile["name"]) ? $fetch_profile["name"] : null,
+                "given_name" => isset($fetch_profile["given_name"]) ? $fetch_profile["given_name"] : null,
+                "picture" => isset($fetch_profile["picture"]) ? $fetch_profile["picture"] : null,
+                "email" => isset($fetch_profile["email"]) ? $fetch_profile["email"] : null,
+            ];
+        }
+    }
+
+    return $profile;
+}
+
+function refresh_access_token(): bool {
+    $is_refreshed = false;
+
+    if(isset($_COOKIE["codelab_google_refresh_token"])) {
+
+        $data = [
+            'client_id' => $_ENV['GOOGLE_CLIENT_ID'],
+            'client_secret' => $_ENV['GOOGLE_CLIENT_SECRET'],
+            'grant_type' => 'refresh_token',
+            'refresh_token' => $_COOKIE['codelab_google_refresh_token'],
+        ];
+
+        $refresh_request = send_request(url: "https://oauth2.googleapis.com/token", data: $data);
+
+        if(isset($refresh_request["access_token"])) {
+            setcookie(name: "codelab_google_access_token", value: $refresh_request["access_token"], httponly: true);
+            $is_refreshed = true;
+        }
+
+    }
+    return $is_refreshed;
+}

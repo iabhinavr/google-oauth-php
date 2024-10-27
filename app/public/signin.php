@@ -1,7 +1,7 @@
 <?php
 include '../vendor/autoload.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable("../");
+$dotenv = Dotenv\Dotenv::createImmutable(paths: "../");
 $dotenv->load();
 
 ?>

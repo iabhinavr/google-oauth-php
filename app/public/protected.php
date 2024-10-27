@@ -1,42 +1,22 @@
 <?php
 include '../vendor/autoload.php';
 
-$dotenv = Dotenv\Dotenv::createImmutable("../");
+$dotenv = Dotenv\Dotenv::createImmutable(paths: "../");
 $dotenv->load();
 
-$authenticated = false;
+include '../functions.php';
 
-if(isset($_COOKIE['codelab_google_access_token'])) {
-    $api_url = 'https://openidconnect.googleapis.com/v1/userinfo';
+$profile = get_profile();
 
-    $ch = curl_init();
-
-    curl_setopt(handle: $ch, option: CURLOPT_URL, value: $api_url);
-    curl_setopt(handle: $ch, option: CURLOPT_HTTPHEADER, value: array(
-        'Authorization: Bearer ' . $_COOKIE['codelab_google_access_token'],
-        'Accept: application/json'
-    ));
-
-    curl_setopt(handle: $ch, option: CURLOPT_RETURNTRANSFER, value: true);
-
-    $response = curl_exec(handle: $ch);
-
-    curl_close(handle: $ch);
-
-    $user_data = json_decode(json: $response, associative: true);
-
-    if(
-        isset($user_data['sub']) && 
-        isset($user_data['name']) &&
-        isset($user_data['given_name']) &&
-        isset($user_data['picture']) &&
-        isset($user_data['email'])
-    ) {
-        $authenticated = true;
+if($profile["token_status"] === "invalid") {
+    $refresh_access_token = refresh_access_token();
+    if($refresh_access_token) {
+        $profile = get_profile();
     }
 }
 
-if(!$authenticated) {
+if(!$profile["data"]) {
+
     header(header: 'Location: signin.php');
     exit();
 }
@@ -50,11 +30,7 @@ if(!$authenticated) {
     <title>Document</title>
 </head>
 <body>
-    <?php if($authenticated) : ?>
-        <img src="<?= $user_data['picture'] ?>" alt="">
-        <h1>Welcome, <?= $user_data['given_name'] ?></h1>
-    <?php else: ?>
-        <a href="signin.php">Please login</a>
-    <?php endif; ?>
+    <img src="<?= $profile["data"]['picture'] ?>" alt="">
+    <h1>Welcome, <?= $profile["data"]['given_name'] ?></h1>
 </body>
 </html>
