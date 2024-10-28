@@ -42,28 +42,35 @@ function exchange_code($code): bool {
 
     if(isset($exchange['access_token']) && isset($exchange['refresh_token'])) {
         setcookie(name: 'codelab_google_access_token', value: $exchange['access_token'], httponly: true);
-        setcookie(name: 'codelab_google_refresh_token', value: $exchange['refresh_token'], httponly: true);
+        setcookie(name: 'codelab_google_refresh_token', value: $exchange['refresh_token'], expires_or_options: time() + (86400 * 365), httponly: true);
         $is_exchanged = true;
     }
     return $is_exchanged;
 }
 function get_profile(): array {
 
-    $profile = ["token_status" => null, "data" => null];
+    $profile = ["access_token" => null, "refresh_token" => null, "data" => null];
+
+    if(isset($_COOKIE['codelab_google_access_token'])) {
+        $profile["access_token"] = "exists";
+    }
+
+    if(isset($_COOKIE['codelab_google_refresh_token'])) {
+        $profile["refresh_token"] = "exists";
+    }
 
     if(isset($_SESSION["user"])) {
         $profile["data"] = $_SESSION["user"];
     }
-
-    else if(isset($_COOKIE['codelab_google_access_token'])) {
+    else if($profile["access_token"] === "exists") {
 
         $fetch_profile = send_request(url: "https://openidconnect.googleapis.com/v1/userinfo", bearer: $_COOKIE['codelab_google_access_token']);
 
         if(isset($fetch_profile['error'])) {
-            $profile["token_status"] = "invalid";
+            $profile["access_token"] = "invalid";
         }
         else {
-            $profile["token_status"] = "valid";
+            $profile["access_token"] = "valid";
             $profile["data"] = [
                 "sub" => isset($fetch_profile["sub"]) ? $fetch_profile["sub"] : "",
                 "name" => isset($fetch_profile["name"]) ? $fetch_profile["name"] : "",
@@ -95,6 +102,7 @@ function refresh_access_token(): bool {
         if(isset($refresh_request["access_token"])) {
             setcookie(name: "codelab_google_access_token", value: $refresh_request["access_token"], httponly: true);
             $is_refreshed = true;
+            $_COOKIE["codelab_google_access_token"] = $refresh_request["access_token"];
         }
 
     }

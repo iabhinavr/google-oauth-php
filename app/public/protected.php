@@ -10,7 +10,9 @@ include '../functions.php';
 
 $profile = get_profile();
 
-if($profile["token_status"] === "invalid") {
+if(($profile["access_token"] === "invalid" || $profile["access_token"] === null) && 
+    $profile["refresh_token"] === "exists" ) {
+        
     $refresh_access_token = refresh_access_token();
     if($refresh_access_token) {
         $profile = get_profile();
