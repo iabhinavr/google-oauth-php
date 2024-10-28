@@ -101,21 +101,21 @@ function refresh_access_token(): bool {
     return $is_refreshed;
 }
 
-function verify_state($oauth_state): bool {
+function verify_state($oauth_state): array {
     
     if(empty($oauth_state)) {
-        return false;
+        return ["status" => false, "message" => "state_variable_empty"];
     }
 
     if(!isset($_SESSION["oauth_state"])) {
-        return false;
+        return ["status" => false, "message" => "state_session_not_set"];
     }
 
     if(!hash_equals(known_string: $_SESSION["oauth_state"], user_string: $oauth_state)) {
-        return false;
+        return ["status" => false, "message" => "state_mismatch"];
     }
 
-    return true;
+    return ["status" => true, "message" => "state_verified"];
 }
 
 function join_signin_parameters($data): string {

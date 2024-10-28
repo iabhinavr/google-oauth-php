@@ -1,4 +1,5 @@
 <?php
+session_start();
 
 include '../vendor/autoload.php';
 
@@ -9,8 +10,10 @@ include '../functions.php';
 
 if(isset($_GET) && isset($_GET['code'])) {
 
-    if(!verify_state(oauth_state: $_GET["state"])) {
-        header(header: "Location: signin.php?error=invalid_state");
+    $state_verification = verify_state(oauth_state: $_GET["state"]);
+
+    if(!$state_verification["status"]) {
+        header(header: "Location: signin.php?error=" . $state_verification["message"]);
         exit();
     }
 

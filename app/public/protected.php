@@ -34,5 +34,6 @@ if(!$profile["data"]) {
 <body>
     <img src="<?= $profile["data"]['picture'] ?>" alt="">
     <h1>Welcome, <?= $profile["data"]['given_name'] ?></h1>
+    <a href="/signout.php" class="btn btn-primary btn-block">Signout</a>
 </body>
 </html>
