@@ -1,4 +1,6 @@
 <?php
+session_start();
+
 include '../vendor/autoload.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(paths: "../");
@@ -27,7 +29,7 @@ if(!$profile["data"]) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Protected Page</title>
 </head>
 <body>
     <img src="<?= $profile["data"]['picture'] ?>" alt="">

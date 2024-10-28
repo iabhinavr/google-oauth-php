@@ -9,6 +9,11 @@ include '../functions.php';
 
 if(isset($_GET) && isset($_GET['code'])) {
 
+    if(!verify_state(oauth_state: $_GET["state"])) {
+        header(header: "Location: signin.php?error=invalid_state");
+        exit();
+    }
+
     $exchange_code = exchange_code(code: $_GET['code']);
 
     if(!$exchange_code) {

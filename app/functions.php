@@ -51,7 +51,11 @@ function get_profile(): array {
 
     $profile = ["token_status" => null, "data" => null];
 
-    if(isset($_COOKIE['codelab_google_access_token'])) {
+    if(isset($_SESSION["user"])) {
+        $profile["data"] = $_SESSION["user"];
+    }
+
+    else if(isset($_COOKIE['codelab_google_access_token'])) {
 
         $fetch_profile = send_request(url: "https://openidconnect.googleapis.com/v1/userinfo", bearer: $_COOKIE['codelab_google_access_token']);
 
@@ -61,12 +65,13 @@ function get_profile(): array {
         else {
             $profile["token_status"] = "valid";
             $profile["data"] = [
-                "sub" => isset($fetch_profile["sub"]) ? $fetch_profile["sub"] : null,
-                "name" => isset($fetch_profile["name"]) ? $fetch_profile["name"] : null,
-                "given_name" => isset($fetch_profile["given_name"]) ? $fetch_profile["given_name"] : null,
-                "picture" => isset($fetch_profile["picture"]) ? $fetch_profile["picture"] : null,
-                "email" => isset($fetch_profile["email"]) ? $fetch_profile["email"] : null,
+                "sub" => isset($fetch_profile["sub"]) ? $fetch_profile["sub"] : "",
+                "name" => isset($fetch_profile["name"]) ? $fetch_profile["name"] : "",
+                "given_name" => isset($fetch_profile["given_name"]) ? $fetch_profile["given_name"] : "",
+                "picture" => isset($fetch_profile["picture"]) ? $fetch_profile["picture"] : "",
+                "email" => isset($fetch_profile["email"]) ? $fetch_profile["email"] : "",
             ];
+            $_SESSION["user"] = $profile["data"];
         }
     }
 
@@ -94,4 +99,35 @@ function refresh_access_token(): bool {
 
     }
     return $is_refreshed;
+}
+
+function verify_state($oauth_state): bool {
+    
+    if(empty($oauth_state)) {
+        return false;
+    }
+
+    if(!isset($_SESSION["oauth_state"])) {
+        return false;
+    }
+
+    if(!hash_equals(known_string: $_SESSION["oauth_state"], user_string: $oauth_state)) {
+        return false;
+    }
+
+    return true;
+}
+
+function join_signin_parameters($data): string {
+    $string = "?";
+    foreach($data as $key => $value) {
+        if($key === "redirect_uri") {
+            $string .= "&$key=" . urlencode(string: $value);
+        }
+        else {
+            $string .= "&$key=$value";
+        }
+        $string = ltrim(string: $string, characters: "&");
+    }
+    return $string;
 }
