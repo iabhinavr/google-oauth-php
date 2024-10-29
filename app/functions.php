@@ -64,43 +64,46 @@ function exchange_code($code): bool {
     }
     return $is_exchanged;
 }
-function get_profile(): array {
+function authenticate(): array {
 
-    $profile = ["access_token" => null, "refresh_token" => null, "data" => null];
+    $user = ["access_token" => null, "refresh_token" => null, "data" => null];
 
     if(isset($_COOKIE['codelab_google_access_token'])) {
-        $profile["access_token"] = "exists";
+        $user["access_token"] = "exists";
     }
 
     if(isset($_COOKIE['codelab_google_refresh_token'])) {
-        $profile["refresh_token"] = "exists";
+        $user["refresh_token"] = "exists";
     }
 
-    if(isset($_SESSION["user"])) {
-        $profile["data"] = $_SESSION["user"];
+    if(isset($_SESSION["user_data"])) {
+        $user["data"] = $_SESSION["user_data"];
     }
-    else if($profile["access_token"] === "exists") {
+    else if($user["access_token"] === "exists") {
 
         $fetch_profile = send_request(url: "https://openidconnect.googleapis.com/v1/userinfo", bearer: $_COOKIE['codelab_google_access_token']);
 
         if(isset($fetch_profile['error'])) {
-            $profile["access_token"] = "invalid";
+            $user["access_token"] = "invalid";
         }
         else {
-            $profile["access_token"] = "valid";
-            $profile["data"] = [
+            $user["access_token"] = "valid";
+            $user["data"] = [
                 "sub" => isset($fetch_profile["sub"]) ? $fetch_profile["sub"] : "",
                 "name" => isset($fetch_profile["name"]) ? $fetch_profile["name"] : "",
                 "given_name" => isset($fetch_profile["given_name"]) ? $fetch_profile["given_name"] : "",
                 "picture" => isset($fetch_profile["picture"]) ? $fetch_profile["picture"] : "",
                 "email" => isset($fetch_profile["email"]) ? $fetch_profile["email"] : "",
             ];
-            $_SESSION["user"] = $profile["data"];
+
+            session_regenerate_id(delete_old_session: true);
+
+            $_SESSION["user_data"] = $user["data"];
             $_SESSION["csrf_token"] = bin2hex(string: random_bytes(length: 32));
         }
     }
 
-    return $profile;
+    return $user;
 }
 
 function refresh_access_token(): bool {

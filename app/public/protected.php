@@ -8,18 +8,18 @@ $dotenv->load();
 
 include '../functions.php';
 
-$profile = get_profile();
+$user = authenticate();
 
-if(($profile["access_token"] === "invalid" || $profile["access_token"] === null) && 
-    $profile["refresh_token"] === "exists" ) {
+if(($user["access_token"] === "invalid" || $user["access_token"] === null) && 
+    $user["refresh_token"] === "exists" ) {
         
     $refresh_access_token = refresh_access_token();
     if($refresh_access_token) {
-        $profile = get_profile();
+        $user = authenticate();
     }
 }
 
-if(!$profile["data"] || empty($_SESSION["csrf_token"])) {
+if(!$user["data"] || empty($_SESSION["csrf_token"])) {
 
     header(header: 'Location: signin.php');
     exit();
@@ -34,8 +34,8 @@ if(!$profile["data"] || empty($_SESSION["csrf_token"])) {
     <title>Protected Page</title>
 </head>
 <body>
-    <img src="<?= $profile["data"]['picture'] ?>" alt="">
-    <h1>Welcome, <?= $profile["data"]['given_name'] ?></h1>
+    <img src="<?= $user["data"]['picture'] ?>" alt="">
+    <h1>Welcome, <?= $user["data"]['given_name'] ?></h1>
     <a href="/signout.php?token=<?= $_SESSION['csrf_token'] ?>" class="btn btn-primary btn-block">Signout</a>
 </body>
 </html>

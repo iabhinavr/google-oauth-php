@@ -12,10 +12,19 @@ if(!hash_equals(known_string: $_SESSION["csrf_token"], user_string: $_GET["token
     exit();
 }
 
-unset($_SESSION["user"]);
-unset($_SESSION["csrf_token"]);
+$_SESSION = array();
+
 setcookie(name: "codelab_google_access_token", expires_or_options: time() - 3600);
 setcookie(name: "codelab_google_refresh_token", expires_or_options: time() - 3600);
+
+if (ini_get(option: "session.use_cookies")) {
+    $params = session_get_cookie_params();
+    setcookie(name: session_name(), value: '', expires_or_options: time() - 42000,
+        path: $params["path"], domain: $params["domain"],
+        secure: $params["secure"], httponly: $params["httponly"]
+    );
+}
+
 session_destroy();
 
 header(header: "Location: signin.php");
