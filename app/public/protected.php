@@ -19,7 +19,7 @@ if(($profile["access_token"] === "invalid" || $profile["access_token"] === null)
     }
 }
 
-if(!$profile["data"]) {
+if(!$profile["data"] || empty($_SESSION["csrf_token"])) {
 
     header(header: 'Location: signin.php');
     exit();
@@ -36,6 +36,6 @@ if(!$profile["data"]) {
 <body>
     <img src="<?= $profile["data"]['picture'] ?>" alt="">
     <h1>Welcome, <?= $profile["data"]['given_name'] ?></h1>
-    <a href="/signout.php" class="btn btn-primary btn-block">Signout</a>
+    <a href="/signout.php?token=<?= $_SESSION['csrf_token'] ?>" class="btn btn-primary btn-block">Signout</a>
 </body>
 </html>

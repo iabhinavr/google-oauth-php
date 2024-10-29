@@ -3,25 +3,42 @@
 function send_request($url, $data = null, $bearer = null): array {
     $response = [];
 
-    $ch = curl_init();
+    try {
+        $ch = curl_init();
     
-    curl_setopt(handle: $ch, option: CURLOPT_URL, value: $url);
-    curl_setopt(handle: $ch, option: CURLOPT_POST, value: true);
+        curl_setopt(handle: $ch, option: CURLOPT_URL, value: $url);
+        curl_setopt(handle: $ch, option: CURLOPT_POST, value: true);
+    
+        if($data) {
+            curl_setopt(handle: $ch, option: CURLOPT_POSTFIELDS, value: http_build_query(data: $data));
+        }
+    
+        if($bearer) {
+            curl_setopt(handle: $ch, option: CURLOPT_HTTPHEADER, value: array(
+                'Authorization: Bearer ' . $bearer,
+                'Accept: application/json'
+            ));
+        }
+        
+        curl_setopt(handle: $ch, option: CURLOPT_RETURNTRANSFER, value: true);
+        curl_setopt(handle: $ch, option: CURLOPT_FAILONERROR, value: true);
+        curl_setopt(handle: $ch, option: CURLOPT_FOLLOWLOCATION, value: true);
 
-    if($data) {
-        curl_setopt(handle: $ch, option: CURLOPT_POSTFIELDS, value: http_build_query(data: $data));
+        $curl_response = curl_exec(handle: $ch);
+    
+        if(curl_errno(handle: $ch) || !$curl_response) {
+            $error = "Request failed";
+            curl_close(handle: $ch);
+            throw new Exception(message: $error);
+        }
+
+        curl_close(handle: $ch);
+    }
+    catch(Exception $e) {
+        $response = ["error" => $e->getMessage()];
     }
 
-    if($bearer) {
-        curl_setopt(handle: $ch, option: CURLOPT_HTTPHEADER, value: array(
-            'Authorization: Bearer ' . $bearer,
-            'Accept: application/json'
-        ));
-    }
     
-    curl_setopt(handle: $ch, option: CURLOPT_RETURNTRANSFER, value: true);
-    $curl_response = curl_exec(handle: $ch);
-    curl_close(handle: $ch);
     $response = json_decode(json: $curl_response, associative: true);
     
     return $response;
@@ -79,6 +96,7 @@ function get_profile(): array {
                 "email" => isset($fetch_profile["email"]) ? $fetch_profile["email"] : "",
             ];
             $_SESSION["user"] = $profile["data"];
+            $_SESSION["csrf_token"] = bin2hex(string: random_bytes(length: 32));
         }
     }
 

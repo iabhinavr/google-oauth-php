@@ -8,7 +8,7 @@ $dotenv->load();
 
 include '../functions.php';
 
-$_SESSION["oauth_state"] = bin2hex(string: random_bytes(length: 16));
+$_SESSION["oauth_state"] = bin2hex(string: random_bytes(length: 32));
 
 $data = [
     "client_id" => $_ENV['GOOGLE_CLIENT_ID'],
