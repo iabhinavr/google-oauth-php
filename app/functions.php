@@ -58,8 +58,28 @@ function exchange_code($code): bool {
     $exchange = send_request(url: "https://oauth2.googleapis.com/token", data: $data);
 
     if(isset($exchange['access_token']) && isset($exchange['refresh_token'])) {
-        setcookie(name: 'codelab_google_access_token', value: $exchange['access_token'], httponly: true);
-        setcookie(name: 'codelab_google_refresh_token', value: $exchange['refresh_token'], expires_or_options: time() + (86400 * 365), httponly: true);
+
+        setcookie(
+            'codelab_google_access_token', 
+            $exchange['access_token'], 
+            [
+                'httponly'=> true,
+                'samesite' => 'Lax',
+                'path' => '/',
+            ],
+        );
+
+        setcookie(
+            'codelab_google_refresh_token', 
+            $exchange['refresh_token'],
+            [
+                'httponly' => true,
+                'samesite' => 'Lax',
+                'expires' => time() + (86400 * 365),
+                'path' => '/',
+            ],
+        );
+
         $is_exchanged = true;
     }
     return $is_exchanged;
@@ -121,7 +141,17 @@ function refresh_access_token(): bool {
         $refresh_request = send_request(url: "https://oauth2.googleapis.com/token", data: $data);
 
         if(isset($refresh_request["access_token"])) {
-            setcookie(name: "codelab_google_access_token", value: $refresh_request["access_token"], httponly: true);
+
+            setcookie(
+                "codelab_google_access_token", 
+                $refresh_request["access_token"],
+                [
+                    'httponly' => true,
+                    'samesite' => 'Lax',
+                    'path' => '/',
+                ],
+            );
+
             $is_refreshed = true;
             $_COOKIE["codelab_google_access_token"] = $refresh_request["access_token"];
         }
